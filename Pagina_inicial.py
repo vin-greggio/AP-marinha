@@ -3,7 +3,7 @@ import hashlib
 import json
 import os
 
-# Função para criptografar senhasss
+# Função para criptografar senhassss
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
