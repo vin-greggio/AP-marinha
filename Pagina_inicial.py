@@ -2,6 +2,8 @@ import streamlit as st
 import hashlib
 import json
 import os
+import pandas as pd
+from PyPDF2 import PdfFileReader
 
 # Função para criptografar senhassss
 def hash_password(password):
@@ -104,3 +106,48 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
 
 else:
     st.write("Por favor, faça login para continuar.")
+
+
+emprestimo = 0
+planilhas = 0
+
+with st.sidebar:
+    if st.button('Empréstimo'):
+        emprestimo = 1
+        planilhas = 0
+    if st.button('Planilhas'):
+        emprestimo = 0
+        planilhas = 1
+
+if emprestimo:
+    with st.form("Formulário de empréstimo"):
+        st.write("Insira as informações do novo empréstimo")
+        nome_emprestimo = st.text_input('Nome')
+        valor_emprestimo = st.text_input('Valor')
+        tempo_meses = st.text_input('Meses')
+        st.form_submit_button('Criar empréstimo')
+
+if planilhas:
+    xls = pd.ExcelFile('big planilha.xlsx')
+    planilha = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentaria', 'Taxa complementar',
+                                                            'Empréstimo'])
+    df = pd.read_excel('big planilha.xlsx', sheet_name=planilha)
+    df = st.data_editor(df, num_rows='dynamic')
+
+    if planilha == 'Condomínio Papem':
+        pdf_ata = st.file_uploader('Coloque aqui o arquivo PDF (ata)')
+        if pdf_ata == None:
+            st.write('Arquivo ainda não selecionado')
+        else:
+            try:
+                with open(pdf_ata) as input_pdf:
+                    pdf_reader = PdfFileReader(input_pdf)
+                if pdf_reader == False:
+                    st.write('Arquivo ainda não selecionado')
+                else:
+                    pdf_reader
+            except:
+                st.warning('Arquivo não compatível')
+
+
+
