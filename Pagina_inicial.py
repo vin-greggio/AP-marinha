@@ -88,7 +88,7 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
         if selected=='Planilhas':
             st.title('Planilhas')
             xls = pd.ExcelFile('big planilha.xlsx')
-            planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentária', 'Taxa complementar', 'Empréstimo'])
+            planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentária', 'Taxa complementar', 'Empréstimo', 'Demonstrativo Junho'])
             df = pd.read_excel(xls, sheet_name=planilha_selecionada)
             df = st.data_editor(df, num_rows='dynamic')
 
@@ -100,6 +100,44 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     tempo_meses = st.text_input('Número de parcelas')
                     mes_inicio = st.text_input('Mês da primeira parcela')
                     st.form_submit_button('Criar empréstimo')
+
+            elif planilha_selecionada == 'Previsão orçamentária':
+                uploaded_file_0 = st.file_uploader("Upload da Planilha Serviços Diversos", type=["xls", "xlsx"])
+                if uploaded_file_0 is not None:
+                    df = pd.read_excel(uploaded_file_0)
+                    st.write("Here is the content of the file:")
+                    st.dataframe(df)
+
+                uploaded_file_1 = st.file_uploader("Upload da Planilha Desconto VNAVI", type=["xls", "xlsx"])
+                if uploaded_file_1 is not None:
+                    df = pd.read_excel(uploaded_file_1)
+                    st.write("Here is the content of the file:")
+                    st.dataframe(df)
+            
+            elif planilha_selecionada == 'Demonstrativo Junho':
+                uploaded_file = st.file_uploader("Upload da Planilha Taxa Extra", type=["xls", "xlsx"])
+                if uploaded_file is not None:
+                    taxa_extra = pd.read_excel(uploaded_file)
+                    st.write("Here is the content of the file:")
+                    st.dataframe(taxa_extra)
+
+                uploaded_file_2 = st.file_uploader("Upload da Planilha Desocupados", type=["xls", "xlsx"])
+                if uploaded_file_2 is not None:
+                    desocupados = pd.read_excel(uploaded_file_2)
+                    st.write("Here is the content of the file:")
+                    st.dataframe(desocupados)
+
+                uploaded_file_3 = st.file_uploader("Upload da Planilha Isolados", type=["xls", "xlsx"])
+                if uploaded_file_3 is not None:
+                    isolados = pd.read_excel(uploaded_file_3)
+                    st.write("Here is the content of the file:")
+                    st.dataframe(isolados)
+
+                uploaded_file_4 = st.file_uploader("Upload da Planilha Restituições", type=["xls", "xlsx"])
+                if uploaded_file_4 is not None:
+                    restituicoes = pd.read_excel(uploaded_file_4)
+                    st.write("Here is the content of the file:")
+                    st.dataframe(restituicoes)
 
         elif selected=='Alterar Senha':
                 st.subheader("Alterar senha")
