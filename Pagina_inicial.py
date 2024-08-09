@@ -4,33 +4,28 @@ import json
 import os
 import pandas as pd
 from PyPDF2 import PdfFileReader
+from streamlit_option_menu import option_menu
 
-# Função para criptografar senhassss
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# Função para carregar usuários do arquivo JSON
 def load_users():
     if os.path.exists("users.json"):
         with open("users.json", "r") as file:
             return json.load(file)
     return {}
 
-# Função para salvar usuários no arquivo JSON
 def save_users(users):
     with open("users.json", "w") as file:
         json.dump(users, file)
 
-# Carrega os usuários da base de dados
 users_db = load_users()
 
-# Função para verificar se um usuário e senha estão corretos
 def authenticate(username, password):
     if username in users_db and users_db[username]['password'] == hash_password(password):
         return True
     return False
 
-# Função para criar um novo usuário
 def create_user(username, password, role):
     if username in users_db:
         return False
@@ -38,7 +33,6 @@ def create_user(username, password, role):
     save_users(users_db)
     return True
 
-# Função para alterar a senha de um usuário
 def change_password(username, old_password, new_password):
     if authenticate(username, old_password):
         users_db[username]['password'] = hash_password(new_password)
@@ -46,13 +40,11 @@ def change_password(username, old_password, new_password):
         return True
     return False
 
-# Função para verificar a permissão do usuário
 def has_permission(username, role):
     return users_db.get(username, {}).get("role") == role
 
 st.title("Sistema de Perfis com Streamlit")
 
-# Interface de autenticação
 st.sidebar.header("Login")
 username = st.sidebar.text_input("Usuário")
 password = st.sidebar.text_input("Senha", type="password")
@@ -72,8 +64,29 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
     st.write(f"Usuário logado: {st.session_state['username']} ({st.session_state['role']})")
 
     if st.session_state['role'] == 'editor':
-        st.header("Editor Dashboard")
-        st.write("Aqui os editores podem modificar os dashboards.")
+
+        with st.sidebar:
+            selected = option_menu(
+                    "Menu",
+                    ["Planilhas", 'Empréstimo', 'Alterar Senha'],
+                    icons=['info', 'calculator'],)
+
+        if selected=='Empréstimo':
+            with st.form("Formulário de empréstimo"):
+                st.write("Insira as informações do novo empréstimo")
+                nome_emprestimo = st.text_input('Nome')
+                valor_emprestimo = st.text_input('Valor')
+                tempo_meses = st.text_input('Meses')
+                st.form_submit_button('Criar empréstimo')
+
+        elif selected=='Planilhas':
+            st.title('Planilhas')
+            xls = pd.ExcelFile('big planilha.xlsx')
+            planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentaria', 'Taxa complementar', 'Empréstimo'])
+            df = pd.read_excel(xls, sheet_name=planilha_selecionada)
+            df = st.data_editor(df, num_rows='dynamic')
+
+
 
         # Opção para criar novo usuário
         st.subheader("Criar novo usuário")
@@ -106,48 +119,3 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
 
 else:
     st.write("Por favor, faça login para continuar.")
-
-
-emprestimo = 0
-planilhas = 0
-
-with st.sidebar:
-    if st.button('Empréstimo'):
-        emprestimo = 1
-        planilhas = 0
-    if st.button('Planilhas'):
-        emprestimo = 0
-        planilhas = 1
-
-if emprestimo:
-    with st.form("Formulário de empréstimo"):
-        st.write("Insira as informações do novo empréstimo")
-        nome_emprestimo = st.text_input('Nome')
-        valor_emprestimo = st.text_input('Valor')
-        tempo_meses = st.text_input('Meses')
-        st.form_submit_button('Criar empréstimo')
-
-if planilhas:
-    xls = pd.ExcelFile('big planilha.xlsx')
-    planilha = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentaria', 'Taxa complementar',
-                                                            'Empréstimo'])
-    df = pd.read_excel('big planilha.xlsx', sheet_name=planilha)
-    df = st.data_editor(df, num_rows='dynamic')
-
-    if planilha == 'Condomínio Papem':
-        pdf_ata = st.file_uploader('Coloque aqui o arquivo PDF (ata)')
-        if pdf_ata == None:
-            st.write('Arquivo ainda não selecionado')
-        else:
-            try:
-                with open(pdf_ata) as input_pdf:
-                    pdf_reader = PdfFileReader(input_pdf)
-                if pdf_reader == False:
-                    st.write('Arquivo ainda não selecionado')
-                else:
-                    pdf_reader
-            except:
-                st.warning('Arquivo não compatível')
-
-
-
