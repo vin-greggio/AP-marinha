@@ -88,7 +88,7 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
         if selected=='Planilhas':
             st.title('Planilhas')
             xls = pd.ExcelFile('big planilha.xlsx')
-            planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentaria', 'Taxa complementar', 'Empréstimo'])
+            planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentária', 'Taxa complementar', 'Empréstimo'])
             df = pd.read_excel(xls, sheet_name=planilha_selecionada)
             df = st.data_editor(df, num_rows='dynamic')
 
@@ -135,7 +135,7 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
         if selected=='Planilhas':
             st.title('Planilhas')
             xls = pd.ExcelFile('big planilha.xlsx')
-            planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentaria', 'Taxa complementar', 'Empréstimo'])
+            planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentária', 'Taxa complementar', 'Empréstimo'])
             df = pd.read_excel(xls, sheet_name=planilha_selecionada)
             df = st.dataframe(df)
                     
