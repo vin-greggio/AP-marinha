@@ -6,6 +6,9 @@ import pandas as pd
 from PyPDF2 import PdfFileReader
 from streamlit_option_menu import option_menu
 
+#INICIO DAS FUNÇOES
+#########################################################################################
+
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -43,7 +46,10 @@ def change_password(username, old_password, new_password):
 def has_permission(username, role):
     return users_db.get(username, {}).get("role") == role
 
-st.title("Sistema de Perfis com Streamlit")
+#FIM DAS FUNCOES
+####################################################################################
+
+st.title("Sistema de Planilhas AP Marinha")
 create_user('miguel', '12345', 'viewer')
 st.sidebar.image('i.png')
 st.sidebar.header("Login")
@@ -59,17 +65,24 @@ if login_button:
         st.session_state['role'] = users_db[username]['role']
     else:
         st.sidebar.error("Usuário ou senha incorretos.")
+####################################################################################
 
-# Verifica se o usuário está autenticado
+
+# COMEÇA AQUI A PARTIR DE LOGADO
+
+
+####################################################################################
 if 'authenticated' in st.session_state and st.session_state['authenticated']:
     st.write(f"Usuário logado: {st.session_state['username']} ({st.session_state['role']})")
 
+
+    #CASO EDITOR:
     if st.session_state['role'] == 'editor':
 
         with st.sidebar:
             selected = option_menu(
                     "Menu",
-                    ["Planilhas", 'Empréstimo', 'Alterar Senha'],
+                    ["Planilhas", 'Empréstimo', 'Alterar Senha', 'Criar Usuário'],
                     icons=['info', 'calculator'],)
 
         if selected=='Empréstimo':
@@ -98,11 +111,24 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                         st.success("Senha alterada com sucesso!")
                     else:
                         st.error("Senha antiga incorreta.")
+        elif selected == 'Criar Usuário':
+            st.subheader("Criar novo usuário")
+            new_username = st.text_input("Novo usuário")
+            new_password = st.text_input("Primeira Senha", type="password")
+            new_role = st.selectbox("Função", ["editor", "viewer"])
+            create_user_button = st.button("Criar usuário")
+
+            if create_user_button:
+                if create_user(new_username, new_password, new_role):
+                    st.success("Usuário criado com sucesso!")
+                else:
+                    st.error("Usuário já existe.")
+    #CASO NÃO EDITOR:
     else:
         with st.sidebar:
             selected = option_menu(
                     "Menu",
-                    ["Planilhas", 'Empréstimo', 'Alterar Senha'],
+                    ["Planilhas", 'Empréstimo', 'Alterar Senha', 'Criar Usuário'],
                     icons=['info', 'calculator'],)
 
         if selected=='Empréstimo':
@@ -132,23 +158,6 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                 else:
                     st.error("Senha antiga incorreta.")
 
-        # Opção para criar novo usuário
-        st.subheader("Criar novo usuário")
-        new_username = st.text_input("Novo usuário")
-        new_password = st.text_input("Primeira Senha", type="password")
-        new_role = st.selectbox("Função", ["editor", "viewer"])
-        create_user_button = st.button("Criar usuário")
-
-        if create_user_button:
-            if create_user(new_username, new_password, new_role):
-                st.success("Usuário criado com sucesso!")
-            else:
-                st.error("Usuário já existe.")
-
-    st.header("Visualização de Dashboard")
-    st.write("Aqui os usuários podem visualizar os dashboards.")
-
-    # Opção para alterar a senha
 
 
 else:
