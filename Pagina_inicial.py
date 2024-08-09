@@ -85,20 +85,21 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     ["Planilhas", 'Empréstimo', 'Alterar Senha', 'Criar Usuário'],
                     icons=['info', 'calculator'],)
 
-        if selected=='Empréstimo':
-            with st.form("Formulário de empréstimo"):
-                st.write("Insira as informações do novo empréstimo")
-                nome_emprestimo = st.text_input('Nome')
-                valor_emprestimo = st.text_input('Valor')
-                tempo_meses = st.text_input('Meses')
-                st.form_submit_button('Criar empréstimo')
-
-        elif selected=='Planilhas':
+        if selected=='Planilhas':
             st.title('Planilhas')
             xls = pd.ExcelFile('big planilha.xlsx')
             planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentaria', 'Taxa complementar', 'Empréstimo'])
             df = pd.read_excel(xls, sheet_name=planilha_selecionada)
             df = st.data_editor(df, num_rows='dynamic')
+
+            if planilha_selecionada == 'Empréstimo':
+                with st.form("Formulário de empréstimo"):
+                    st.write("Insira as informações do novo empréstimo")
+                    nome_emprestimo = st.text_input('Nome')
+                    valor_emprestimo = st.text_input('Valor (utilize o formato xx.xxx.xxx,xx)')
+                    tempo_meses = st.text_input('Número de parcelas')
+                    mes_inicio = st.text_input('Mês da primeira parcela')
+                    st.form_submit_button('Criar empréstimo')
 
         elif selected=='Alterar Senha':
                 st.subheader("Alterar senha")
@@ -131,15 +132,7 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     ["Planilhas", 'Empréstimo', 'Alterar Senha', 'Criar Usuário'],
                     icons=['info', 'calculator'],)
 
-        if selected=='Empréstimo':
-            with st.form("Formulário de empréstimo"):
-                st.write("Insira as informações do novo empréstimo")
-                nome_emprestimo = st.text_input('Nome')
-                valor_emprestimo = st.text_input('Valor')
-                tempo_meses = st.text_input('Meses')
-                st.form_submit_button('Criar empréstimo')
-
-        elif selected=='Planilhas':
+        if selected=='Planilhas':
             st.title('Planilhas')
             xls = pd.ExcelFile('big planilha.xlsx')
             planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentaria', 'Taxa complementar', 'Empréstimo'])
