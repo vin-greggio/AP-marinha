@@ -44,7 +44,8 @@ def has_permission(username, role):
     return users_db.get(username, {}).get("role") == role
 
 st.title("Sistema de Perfis com Streamlit")
-
+create_user('miguel', '12345', 'viewer')
+st.sidebar.image('i.png')
 st.sidebar.header("Login")
 username = st.sidebar.text_input("Usuário")
 password = st.sidebar.text_input("Senha", type="password")
@@ -104,32 +105,32 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     ["Planilhas", 'Empréstimo', 'Alterar Senha'],
                     icons=['info', 'calculator'],)
 
-            if selected=='Empréstimo':
-                with st.form("Formulário de empréstimo"):
-                    st.write("Insira as informações do novo empréstimo")
-                    nome_emprestimo = st.text_input('Nome')
-                    valor_emprestimo = st.text_input('Valor')
-                    tempo_meses = st.text_input('Meses')
-                    st.form_submit_button('Criar empréstimo')
+        if selected=='Empréstimo':
+            with st.form("Formulário de empréstimo"):
+                st.write("Insira as informações do novo empréstimo")
+                nome_emprestimo = st.text_input('Nome')
+                valor_emprestimo = st.text_input('Valor')
+                tempo_meses = st.text_input('Meses')
+                st.form_submit_button('Criar empréstimo')
 
-            elif selected=='Planilhas':
-                st.title('Planilhas')
-                xls = pd.ExcelFile('big planilha.xlsx')
-                planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentaria', 'Taxa complementar', 'Empréstimo'])
-                df = pd.read_excel(xls, sheet_name=planilha_selecionada)
-                df = st.data_editor(df, num_rows='dynamic')
+        elif selected=='Planilhas':
+            st.title('Planilhas')
+            xls = pd.ExcelFile('big planilha.xlsx')
+            planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentaria', 'Taxa complementar', 'Empréstimo'])
+            df = pd.read_excel(xls, sheet_name=planilha_selecionada)
+            df = st.dataframe(df)
                     
-            elif selected=='Alterar Senha':
-                st.subheader("Alterar senha")
-                old_password = st.text_input("Senha antiga", type="password")
-                new_password = st.text_input("Nova senha", type="password")
-                change_password_button = st.button("Alterar senha")
+        elif selected=='Alterar Senha':
+            st.subheader("Alterar senha")
+            old_password = st.text_input("Senha antiga", type="password")
+            new_password = st.text_input("Nova senha", type="password")
+            change_password_button = st.button("Alterar senha")
 
-                if change_password_button:
-                    if change_password(st.session_state['username'], old_password, new_password):
-                        st.success("Senha alterada com sucesso!")
-                    else:
-                        st.error("Senha antiga incorreta.")
+            if change_password_button:
+                if change_password(st.session_state['username'], old_password, new_password):
+                    st.success("Senha alterada com sucesso!")
+                else:
+                    st.error("Senha antiga incorreta.")
 
         # Opção para criar novo usuário
         st.subheader("Criar novo usuário")
