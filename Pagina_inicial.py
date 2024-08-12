@@ -6,8 +6,30 @@ import pandas as pd
 from PyPDF2 import PdfFileReader
 from streamlit_option_menu import option_menu
 
+#INICIO DATAFRAMES
+if 'df_emps' not in st.session_state:
+    st.session_state.df_emps = pd.DataFrame(pd.NA, index=[0], columns=['Coluna1', 'Coluna2', 'Coluna3', 'Coluna4','Coluna5'])
+
+
 #INICIO DAS FUNÇOES
 #########################################################################################
+
+def cria_emprestimo(nome, valor, tempo, mes, planilha_selecionada):
+    meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+    indice = 0
+    for i in range(len(meses)):
+        if meses[i]==mes:
+            indice=i
+            break
+    planilha_selecionada = planilha_selecionada.append({'Coluna1':pd.NA,'Coluna2':pd.NA,'Coluna3':pd.NA,'Coluna4':pd.NA,'Coluna5':pd.NA},ignore_index=True)
+    planilha_selecionada = planilha_selecionada.append({'Coluna1':nome,'Coluna2':'Mês','Coluna3':'Valor','Coluna4':'Situação','Coluna5':pd.NA},ignore_index=True)
+    planilha_selecionada = planilha_selecionada.append({'Coluna1':pd.NA,'Coluna2':pd.NA,'Coluna3':pd.NA,'Coluna4':pd.NA,'Coluna5':pd.NA},ignore_index=True)
+    for i in range(int(tempo)):
+        planilha_selecionada = planilha_selecionada.append({'Coluna1':pd.NA,'Coluna2':pd.NA,'Coluna3':meses[indice+i],'Coluna4':int(valor)/int(tempo),'Coluna5':pd.NA},ignore_index=True)
+    return planilha_selecionada
+
+
+
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -50,7 +72,6 @@ def has_permission(username, role):
 ####################################################################################
 
 st.title("Sistema de Planilhas AP Marinha")
-create_user('miguel', '12345', 'viewer')
 st.sidebar.image('i.png')
 st.sidebar.header("Login")
 username = st.sidebar.text_input("Usuário")
@@ -91,7 +112,6 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
             planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentária', 'Taxa complementar', 'Empréstimo', 'Demonstrativo Junho'])
             df = pd.read_excel(xls, sheet_name=planilha_selecionada)
             df = st.data_editor(df, num_rows='dynamic')
-
             if planilha_selecionada == 'Empréstimo':
                 with st.form("Formulário de empréstimo"):
                     st.write("Insira as informações do novo empréstimo")
@@ -99,8 +119,10 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     valor_emprestimo = st.text_input('Valor (utilize o formato xx.xxx.xxx,xx)')
                     tempo_meses = st.text_input('Número de parcelas')
                     mes_inicio = st.text_input('Mês da primeira parcela')
-                    st.form_submit_button('Criar empréstimo')
-
+                    submit_button = st.form_submit_button('Criar empréstimo')
+                    if submit_button:
+                        st.session_state.df_emps = cria_emprestimo(nome_emprestimo, valor_emprestimo, tempo_meses, mes_inicio, st.session_state.df_emps)
+                    print(st.session_state.df_emps)
             elif planilha_selecionada == 'Previsão orçamentária':
                 uploaded_file_0 = st.file_uploader("Upload da Planilha Serviços Diversos", type=["xls", "xlsx"])
                 if uploaded_file_0 is not None:
@@ -138,6 +160,7 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     restituicoes = pd.read_excel(uploaded_file_4)
                     st.write("Here is the content of the file:")
                     st.dataframe(restituicoes)
+            st.session_state.df_emps = st.data_editor(st.session_state.df_emps, num_rows = 'dynamic')
 
         elif selected=='Alterar Senha':
                 st.subheader("Alterar senha")
