@@ -72,7 +72,7 @@ def has_permission(username, role):
 ####################################################################################
 
 st.title("Sistema de Planilhas AP Marinha")
-st.sidebar.image('i.png')
+st.sidebar.image('imgmar.jpeg')
 st.sidebar.header("Login")
 username = st.sidebar.text_input("Usuário")
 password = st.sidebar.text_input("Senha", type="password")
@@ -125,6 +125,13 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     print(st.session_state.df_emps)
             elif planilha_selecionada == 'Previsão orçamentária':
                 uploaded_file_0 = st.file_uploader("Upload da Planilha Serviços Diversos", type=["xls", "xlsx"])
+                algo = pd.ExcelFile('11. Desconto Vnavi.ods')
+                df_3 = pd.read_excel(algo)
+                dsc = df_3['VALOR'].sum()
+                outro = pd.ExcelFile('1. Planilha condomínios_compilada.xls')
+                df_2 = pd.read_excel(outro, sheet_name='Previsão orçamentária')
+                df_2.loc[49, 'Unnamed: 8'] = dsc
+                df = st.data_editor(df_2, num_rows='dynamic')
                 if uploaded_file_0 is not None:
                     df = pd.read_excel(uploaded_file_0)
                     st.write("Here is the content of the file:")
