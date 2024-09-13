@@ -5,11 +5,19 @@ import os
 import pandas as pd
 from PyPDF2 import PdfFileReader
 from streamlit_option_menu import option_menu
+from supabase import create_client, Client
 
 #INICIO DATAFRAMES
-if 'df_emps' not in st.session_state:
-    st.session_state.df_emps = pd.DataFrame(pd.NA, index=[0], columns=['Coluna1', 'Coluna2', 'Coluna3', 'Coluna4','Coluna5'])
 
+@st.cache_resource
+def init_connection():
+    url = "https://fudwcyqizyszfqgwvmik.supabase.co"
+    key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1ZHdjeXFpenlzemZxZ3d2bWlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjU5ODU2NDIsImV4cCI6MjA0MTU2MTY0Mn0.OfjRY2WeMZLlxgMJzYuTOLM390FWBrnOY9kGKp3oYgA'
+    return create_client(url, key)
+
+supabase = init_connection()
+rows = supabase.table('restituicoes').select('*').execute()
+print(rows)
 
 #INICIO DAS FUNÇOES
 #########################################################################################

@@ -1,35 +1,14 @@
-import streamlit as st
-import pandas as pd
+import os
+from supabase import create_client, Client
+from dotenv import load_dotenv
 
-# Initialize or load the DataFrame
-if 'df' not in st.session_state:
-    st.session_state.df = pd.DataFrame(columns=['Name', 'Age'])
+load_dotenv('meme.env')
 
-# Display the DataFrame
-st.write("Current DataFrame:")
-st.dataframe(st.session_state.df)
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
 
-# Create a form
-with st.form(key='my_form'):
-    name = st.text_input("Name")
-    age = st.number_input("Age", min_value=0)
-    
-    # Form submit button
-    submit_button = st.form_submit_button("Submit")
-    
-    if submit_button:
-        # Append new data to the DataFrame
-        new_data = pd.DataFrame([[name, age]], columns=['Name', 'Age'])
-        st.session_state.df = pd.concat([st.session_state.df, new_data], ignore_index=True)
-        
-        # Optionally, show a message or clear form fields
-        st.success("Data added successfully!")
+user = supabase.auth.sign_in_with_password({ "email": 'vinicius.greggio@gmail.com', "password": 'Coxinha!1809' })
 
-# Optional: Add a button to clear the DataFrame
-if st.button("Clear DataFrame"):
-    st.session_state.df = pd.DataFrame(columns=['Name', 'Age'])
-    st.success("DataFrame cleared!")
-
-# Refresh the displayed DataFrame
-st.write("Updated DataFrame:")
-st.dataframe(st.session_state.df)
+data = supabase.table("restituicoes").select('*').execute()
+print(data)
