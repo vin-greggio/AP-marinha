@@ -106,15 +106,52 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     ["Planilhas", 'Empréstimo', 'Alterar Senha', 'Criar Usuário'],
                     icons=['info', 'calculator'],)
         if selected=='Planilhas':
-            uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
-            if uploaded_file is not None:
-                df = pd.read_csv(uploaded_file)
-                st.write("Insira o arquivo CSV:", df)
+            restituicoes_file = st.file_uploader("Insira o CSV da planilha restituições", type="csv")
+            desocupados_file = st.file_uploader("Insira o CSV da planilha desocupados", type="csv")
+            isolados_file = st.file_uploader("Insira o CSV da planilha isolados", type="csv")
+            taxaextra_file = st.file_uploader("Insira o CSV da planilha taxa extra", type="csv")
+
+            if restituicoes_file is not None:
+                restituicoes_df = pd.read_csv(restituicoes_file)
+                st.write("Insira o arquivo CSV:", restituicoes_df)
                 
-                table_name = "ReceitasxDespesas"
+                table_name = "restituicoes"
                 
-                data_to_insert = df.to_dict(orient='records')
+                data_to_insert = restituicoes_df.to_dict(orient='records')
+
+                response = supabase.table(table_name).insert(data_to_insert).execute()
+                st.write(response)
+            
+            if desocupados_file is not None:
+                desocupados_df = pd.read_csv(desocupados_file)
+                st.write("Insira o arquivo CSV:", desocupados_df)
+                
+                table_name = "desocupados"
+                
+                data_to_insert = desocupados_df.to_dict(orient='records')
+
+                response = supabase.table(table_name).insert(data_to_insert).execute()
+                st.write(response)
+            
+            if isolados_file is not None:
+                isolados_df = pd.read_csv(isolados_file)
+                st.write("Insira o arquivo CSV:", isolados_df)
+                
+                table_name = "isolados"
+                
+                data_to_insert = isolados_df.to_dict(orient='records')
+
+                response = supabase.table(table_name).insert(data_to_insert).execute()
+                st.write(response)
+
+            if taxaextra_file is not None:
+                taxaextra_df = pd.read_csv(taxaextra_file)
+                st.write("Insira o arquivo CSV:", taxaextra_df)
+                
+                table_name = "taxa_extra"
+                
+                data_to_insert = taxaextra_df.to_dict(orient='records')
 
                 response = supabase.table(table_name).insert(data_to_insert).execute()
                 st.write(response)
