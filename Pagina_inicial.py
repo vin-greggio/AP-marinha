@@ -4,6 +4,7 @@ import json
 import os
 import pandas as pd
 from PyPDF2 import PdfFileReader
+import matplotlib.pyplot as plt
 from streamlit_option_menu import option_menu
 from supabase import create_client, Client
 
@@ -16,27 +17,13 @@ def init_connection():
     return create_client(url, key)
 
 supabase = init_connection()
-rows = supabase.table('restituicoes').select('*').execute()
-print(rows)
+rows,count = supabase.table('ReceitasxDespesas').select('*').execute()
+df = pd.DataFrame(rows[1])
+df.plot(kind='line',x='CONDOMINIO',y='Saldo')
+plt.show()
 
 #INICIO DAS FUNÇOES
 #########################################################################################
-
-def cria_emprestimo(nome, valor, tempo, mes, planilha_selecionada):
-    meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
-    indice = 0
-    for i in range(len(meses)):
-        if meses[i]==mes:
-            indice=i
-            break
-    planilha_selecionada = planilha_selecionada.append({'Coluna1':pd.NA,'Coluna2':pd.NA,'Coluna3':pd.NA,'Coluna4':pd.NA,'Coluna5':pd.NA},ignore_index=True)
-    planilha_selecionada = planilha_selecionada.append({'Coluna1':nome,'Coluna2':'Mês','Coluna3':'Valor','Coluna4':'Situação','Coluna5':pd.NA},ignore_index=True)
-    planilha_selecionada = planilha_selecionada.append({'Coluna1':pd.NA,'Coluna2':pd.NA,'Coluna3':pd.NA,'Coluna4':pd.NA,'Coluna5':pd.NA},ignore_index=True)
-    for i in range(int(tempo)):
-        planilha_selecionada = planilha_selecionada.append({'Coluna1':pd.NA,'Coluna2':pd.NA,'Coluna3':meses[indice+i],'Coluna4':int(valor)/int(tempo),'Coluna5':pd.NA},ignore_index=True)
-    return planilha_selecionada
-
-
 
 
 def hash_password(password):
@@ -114,70 +101,7 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     ["Planilhas", 'Empréstimo', 'Alterar Senha', 'Criar Usuário'],
                     icons=['info', 'calculator'],)
 
-        if selected=='Planilhas':
-            st.title('Planilhas')
-            xls = pd.ExcelFile('big planilha.xlsx')
-            planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentária', 'Taxa complementar', 'Empréstimo', 'Demonstrativo Junho'])
-            df = pd.read_excel(xls, sheet_name=planilha_selecionada)
-            df = st.data_editor(df, num_rows='dynamic')
-            if planilha_selecionada == 'Empréstimo':
-                with st.form("Formulário de empréstimo"):
-                    st.write("Insira as informações do novo empréstimo")
-                    nome_emprestimo = st.text_input('Nome')
-                    valor_emprestimo = st.text_input('Valor (utilize o formato xx.xxx.xxx,xx)')
-                    tempo_meses = st.text_input('Número de parcelas')
-                    mes_inicio = st.text_input('Mês da primeira parcela')
-                    submit_button = st.form_submit_button('Criar empréstimo')
-                    if submit_button:
-                        st.session_state.df_emps = cria_emprestimo(nome_emprestimo, valor_emprestimo, tempo_meses, mes_inicio, st.session_state.df_emps)
-                    print(st.session_state.df_emps)
-            elif planilha_selecionada == 'Previsão orçamentária':
-                uploaded_file_0 = st.file_uploader("Upload da Planilha Serviços Diversos", type=["xls", "xlsx"])
-                algo = pd.ExcelFile('11. Desconto Vnavi.ods')
-                df_3 = pd.read_excel(algo)
-                dsc = df_3['VALOR'].sum()
-                outro = pd.ExcelFile('1. Planilha condomínios_compilada.xls')
-                df_2 = pd.read_excel(outro, sheet_name='Previsão orçamentária')
-                df_2.loc[49, 'Unnamed: 8'] = dsc
-                df = st.data_editor(df_2, num_rows='dynamic')
-                if uploaded_file_0 is not None:
-                    df = pd.read_excel(uploaded_file_0)
-                    st.write("Here is the content of the file:")
-                    st.dataframe(df)
-
-                uploaded_file_1 = st.file_uploader("Upload da Planilha Desconto VNAVI", type=["xls", "xlsx"])
-                if uploaded_file_1 is not None:
-                    df = pd.read_excel(uploaded_file_1)
-                    st.write("Here is the content of the file:")
-                    st.dataframe(df)
-            
-            elif planilha_selecionada == 'Demonstrativo Junho':
-                uploaded_file = st.file_uploader("Upload da Planilha Taxa Extra", type=["xls", "xlsx"])
-                if uploaded_file is not None:
-                    taxa_extra = pd.read_excel(uploaded_file)
-                    st.write("Here is the content of the file:")
-                    st.dataframe(taxa_extra)
-
-                uploaded_file_2 = st.file_uploader("Upload da Planilha Desocupados", type=["xls", "xlsx"])
-                if uploaded_file_2 is not None:
-                    desocupados = pd.read_excel(uploaded_file_2)
-                    st.write("Here is the content of the file:")
-                    st.dataframe(desocupados)
-
-                uploaded_file_3 = st.file_uploader("Upload da Planilha Isolados", type=["xls", "xlsx"])
-                if uploaded_file_3 is not None:
-                    isolados = pd.read_excel(uploaded_file_3)
-                    st.write("Here is the content of the file:")
-                    st.dataframe(isolados)
-
-                uploaded_file_4 = st.file_uploader("Upload da Planilha Restituições", type=["xls", "xlsx"])
-                if uploaded_file_4 is not None:
-                    restituicoes = pd.read_excel(uploaded_file_4)
-                    st.write("Here is the content of the file:")
-                    st.dataframe(restituicoes)
-            st.session_state.df_emps = st.data_editor(st.session_state.df_emps, num_rows = 'dynamic')
-
-        elif selected=='Alterar Senha':
+        if selected=='Alterar Senha':
                 st.subheader("Alterar senha")
                 old_password = st.text_input("Senha antiga", type="password")
                 new_password = st.text_input("Nova senha", type="password")
@@ -207,15 +131,8 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     "Menu",
                     ["Planilhas", 'Empréstimo', 'Alterar Senha', 'Criar Usuário'],
                     icons=['info', 'calculator'],)
-
-        if selected=='Planilhas':
-            st.title('Planilhas')
-            xls = pd.ExcelFile('big planilha.xlsx')
-            planilha_selecionada = st.selectbox('Selecione a planilha desejada', ['BP_Pagamento','Condomínio Papem', 'Taxa_de_Condomínio', 'Despesas', 'ReceitasxDespesas', 'Previsão orçamentária', 'Taxa complementar', 'Empréstimo'])
-            df = pd.read_excel(xls, sheet_name=planilha_selecionada)
-            df = st.dataframe(df)
-                    
-        elif selected=='Alterar Senha':
+            
+        if selected=='Alterar Senha':
             st.subheader("Alterar senha")
             old_password = st.text_input("Senha antiga", type="password")
             new_password = st.text_input("Nova senha", type="password")
