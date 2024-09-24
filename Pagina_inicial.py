@@ -5,10 +5,14 @@ import os
 import pandas as pd
 from PyPDF2 import PdfFileReader
 import matplotlib.pyplot as plt
+import matplotlib
+import plotly_express as px
 from streamlit_option_menu import option_menu
 from supabase import create_client, Client
 
 #INICIO DATAFRAMES
+
+matplotlib.use('TkAgg')
 
 @st.cache_resource
 def init_connection():
@@ -19,8 +23,9 @@ def init_connection():
 supabase = init_connection()
 rows,count = supabase.table('ReceitasxDespesas').select('*').execute()
 df = pd.DataFrame(rows[1])
-df.plot(kind='line',x='CONDOMINIO',y='Saldo')
-plt.show()
+
+fig = px.bar(df.sort_values('SALDO'), x='CONDOMINIO',y='SALDO', color='CONDOMINIO')
+st.plotly_chart(fig)
 
 #INICIO DAS FUNÇOES
 #########################################################################################
@@ -100,8 +105,21 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     "Menu",
                     ["Planilhas", 'Empréstimo', 'Alterar Senha', 'Criar Usuário'],
                     icons=['info', 'calculator'],)
+        if selected=='Planilhas':
+            uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
-        if selected=='Alterar Senha':
+            if uploaded_file is not None:
+                df = pd.read_csv(uploaded_file)
+                st.write("Insira o arquivo CSV:", df)
+                
+                table_name = "ReceitasxDespesas"
+                
+                data_to_insert = df.to_dict(orient='records')
+
+                response = supabase.table(table_name).insert(data_to_insert).execute()
+                st.write(response)
+        
+        elif selected=='Alterar Senha':
                 st.subheader("Alterar senha")
                 old_password = st.text_input("Senha antiga", type="password")
                 new_password = st.text_input("Nova senha", type="password")

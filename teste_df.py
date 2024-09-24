@@ -23,5 +23,5 @@ supabase = init_connection()
 rows,count = supabase.table('ReceitasxDespesas').select('*').execute()
 df = pd.DataFrame(rows[1])
 
-fig = px.bar(df.sort_values('Saldo'), x='CONDOMINIO', y='Saldo')
+fig = px.bar(df.sort_values('Saldo'), x='CONDOMINIO',y='Saldo', color='CONDOMINIO')
 fig.show()
