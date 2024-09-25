@@ -9,6 +9,7 @@ import matplotlib
 import plotly_express as px
 from streamlit_option_menu import option_menu
 from supabase import create_client, Client
+from datetime import datetime
 
 #INICIO DATAFRAMES
 
@@ -21,12 +22,6 @@ def init_connection():
     return create_client(url, key)
 
 supabase = init_connection()
-rows,count = supabase.table('ReceitasxDespesas').select('*').execute()
-df = pd.DataFrame(rows[1])
-
-fig = px.bar(df.sort_values('SALDO'), x='CONDOMINIO',y='SALDO', color='CONDOMINIO')
-st.plotly_chart(fig)
-
 #INICIO DAS FUNÇOES
 #########################################################################################
 
@@ -72,8 +67,14 @@ def has_permission(username, role):
 ####################################################################################
 
 st.title("Sistema de Planilhas AP Marinha")
-st.sidebar.image('imgmar.jpeg')
+st.sidebar.image('C:\\Users\\Henry\\Documents\\GitHub\\AP-marinha\\imgmar.jpeg')
 st.sidebar.header("Login")
+with st.sidebar:
+    selected = option_menu(
+        "Menu",
+        ["Login", "Empréstimo"],
+        icons=["key", "calculator"]
+    )
 username = st.sidebar.text_input("Usuário")
 password = st.sidebar.text_input("Senha", type="password")
 login_button = st.sidebar.button("Login")
@@ -200,6 +201,146 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     st.error("Senha antiga incorreta.")
 
 
-
 else:
     st.write("Por favor, faça login para continuar.")
+
+
+if selected == "Empréstimo":
+    st.subheader("Gerenciamento de Empréstimos")
+
+    # Função para buscar empréstimos existentes no banco de dados
+    def load_emprestimos():
+        response = supabase.table("emprestimos").select("*").execute()
+        return response.data if response.data else []
+
+    # Função para buscar parcelas existentes no banco de dados
+    def load_parcelas(emprestimo_id):
+        response = supabase.table("parcelas").select("*").eq("emprestimo_id", emprestimo_id).execute()
+        return response.data if response.data else []
+
+    # Função para adicionar um empréstimo
+    def save_emprestimo(emprestimo_data):
+        response = supabase.table("emprestimos").insert([emprestimo_data]).execute()
+        return response.data if response.data else None  # Retornar os dados do empréstimo salvo
+
+    # Função para adicionar parcelas
+    def save_parcelas(parcelas_data):
+        for parcela in parcelas_data:
+            if not isinstance(parcela.get('emprestimo_id'), int):
+                raise ValueError(f"emprestimo_id inválido: {parcela.get('emprestimo_id')}")
+            if not isinstance(parcela.get('numero_parcela'), int):
+                raise ValueError(f"numero_parcela inválido: {parcela.get('numero_parcela')}")
+        
+        try:
+            response = supabase.table("parcelas").insert(parcelas_data).execute()
+            return response.data is not None
+        except Exception as e:
+            print(f"Erro ao salvar parcelas: {e}")
+            return None
+
+    # Função para atualizar uma parcela
+    def update_parcela(parcela_id, updated_data):
+        response = supabase.table("parcelas").update(updated_data).eq('id', parcela_id).execute()
+        return response.data is not None
+
+    # Carregar empréstimos existentes
+    emprestimos = load_emprestimos()
+
+    # Exibir opções de criar ou atualizar
+    if st.button("Adicionar Novo Empréstimo"):
+        st.session_state.show_create_form = True
+        st.session_state.show_update_form = False  # Oculta o formulário de atualização
+
+    if st.button("Atualizar Empréstimo Existente"):
+        if emprestimos:  # Verifica se há empréstimos cadastrados
+            st.session_state.show_update_form = True
+            st.session_state.show_create_form = False  # Oculta o formulário de criação
+        else:
+            st.warning("Nenhum empréstimo encontrado. Adicione um novo empréstimo primeiro.")
+
+    # Exibir formulário para adicionar novo empréstimo
+    if 'show_create_form' in st.session_state and st.session_state.show_create_form:
+        st.write("Preencha os dados do novo empréstimo:")
+        nome = st.text_input("Nome do Novo Empréstimo")
+        valor = st.number_input("Valor do Empréstimo", min_value=0.0, step=0.01)
+        data_inicial = st.date_input("Data Inicial")
+        numero_parcelas = st.number_input("Número de Parcelas", min_value=1, step=1)
+
+        valor_parcela = valor / numero_parcelas
+
+        # Exibir valor de cada parcela
+        st.text(f"Valor de cada parcela: R${valor_parcela:.2f}")
+
+        if st.button("Salvar Novo Empréstimo"):
+            # Verificar se o nome do empréstimo já existe
+            emprestimo_existente = next((e for e in emprestimos if e['nome'].lower() == nome.lower()), None)
+            if emprestimo_existente:
+                st.warning(f"Empréstimo com o nome '{nome}' já existe. Por favor, verifique o empréstimo existente ou escolha outro nome.")
+            else:
+                # Preparar dados do empréstimo
+                emprestimo_data = {
+                    "nome": nome,
+                    "valor": valor,
+                    "ano": data_inicial.year,
+                    "mes": data_inicial.strftime("%b").lower(),
+                    "situacao": "Em andamento",
+                    "date_inicial": data_inicial.isoformat(),
+                    "numero_parcelas": numero_parcelas,
+                    "valor_parcela": valor_parcela,
+                }
+
+                response = save_emprestimo(emprestimo_data)
+                if response:
+                    emprestimo_id = response[0]['id']
+                    st.success("Novo empréstimo salvo com sucesso!")
+
+                    parcelas_data = []
+                    for i in range(numero_parcelas):
+                        mes_vencimento = data_inicial + pd.DateOffset(months=i)
+                        parcelas_data.append({
+                            "emprestimo_id": emprestimo_id,
+                            "numero_parcela": i + 1,
+                            "mes_vencimento": mes_vencimento.isoformat(),
+                            "status": "Não Pago",
+                        })
+
+                    if save_parcelas(parcelas_data):
+                        st.success(f"{numero_parcelas} parcelas geradas com sucesso!")
+                    else:
+                        st.error("Erro ao gerar as parcelas.")
+                else:
+                    st.error("Erro ao salvar o novo empréstimo.")
+
+    # Exibir formulário para atualizar empréstimo existente e gerenciar parcelas
+    if 'show_update_form' in st.session_state and st.session_state.show_update_form:
+        emprestimo_selecionado = st.selectbox("Selecione um empréstimo existente", options=[e['nome'] for e in emprestimos])
+        existing_emprestimo = next((e for e in emprestimos if e['nome'] == emprestimo_selecionado), None)
+
+        if existing_emprestimo:
+            st.write(f"Gerenciar parcelas do empréstimo: {existing_emprestimo['nome']}")
+
+            parcelas = load_parcelas(existing_emprestimo['id'])
+
+            parcelas_pagas = sum(1 for parcela in parcelas if parcela['status'] == "Pago")
+            parcelas_totais = len(parcelas)
+            parcelas_restantes = parcelas_totais - parcelas_pagas
+            parcelas_atrasadas = sum(1 for parcela in parcelas if parcela['status'] == "Não Pago" and datetime.strptime(parcela['mes_vencimento'], '%Y-%m-%d') < datetime.now())
+
+            # Exibir informações adicionais
+            st.write(f"Total de parcelas: {parcelas_totais}")
+            st.write(f"Parcelas pagas: {parcelas_pagas}")
+            st.write(f"Parcelas restantes: {parcelas_restantes}")
+            st.write(f"Parcelas atrasadas: {parcelas_atrasadas}")
+
+            # Exibir parcelas
+            for parcela in parcelas:
+                st.write(f"Parcela {parcela['numero_parcela']}: Vencimento em {parcela['mes_vencimento']}, Status: {parcela['status']}")
+
+                if parcela['status'] == "Não Pago":
+                    if st.button(f"Marcar como paga - Parcela {parcela['numero_parcela']}"):
+                        updated_parcela = {"status": "Pago"}
+                        if update_parcela(parcela['id'], updated_parcela):
+                            st.success(f"Parcela {parcela['numero_parcela']} marcada como paga.")
+                        else:
+                            st.error(f"Erro ao atualizar a parcela {parcela['numero_parcela']}.")
+
