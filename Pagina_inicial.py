@@ -148,7 +148,7 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                 st.write('Soma de valores condominiais: ',sum(desocupados['COND']), ' reais')
                 st.write('Média de valores condominiais: ', desocupados['COND'].mean().round(2), ' reais')
                 condo_selecionado = st.selectbox(label='Selecione o gráfico desejado',options=['Águas Claras',
-                'VNAVI','SHCES','SHCGN','SQS','SHIGS','Guara'])
+                'VNAVI','SHCES','SHCGN','SQS','SHIGS','Guara','Outros'])
 
                 print(desocupados.columns)
                 desocupados = desocupados[desocupados['SITUACAO']=='DESOCUPADO']
@@ -172,6 +172,10 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
                     fig_des.update_layout(bargap=0.1)
                 if condo_selecionado=='Guara':
                     fig_des = px.bar(desocupados[desocupados['PNR'].str.startswith('Guara')].sort_values('COND'),y='PNR',x='COND',orientation='h')
+                    fig_des.update_layout(bargap=0.1)
+                if condo_selecionado=='Outros':
+                    fig_des = px.bar(desocupados[~desocupados['PNR'].str.startswith(('Águas Claras',
+                'VNAVI','SHCES','SHCGN','SQS','SHIGS','Guara'))].sort_values('COND'),y='PNR',x='COND',orientation='h')
                     fig_des.update_layout(bargap=0.1)
 
                 st.plotly_chart(fig_des)
