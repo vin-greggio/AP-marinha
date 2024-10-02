@@ -24,30 +24,6 @@ def init_connection():
 
 supabase = init_connection()
 
-saude = pd.DataFrame(supabase.table('receitasxdespesas').select("*").execute().data)
-desocupados = pd.DataFrame(supabase.table('desocupados').select("*").execute().data)
-st.subheader('Dashboard')
-saude_tab,desocupados_tab = st.tabs(['Saúde Financeira','Desocupados'])
-with saude_tab:
-    st.write('Saldo médio: ',saude['SALDO'].mean())
-    pos_neg = st.selectbox(label='Selecione o gráfico desejado',options=['Condomínios com saldo positivo','Condomínios com saldo negativo'])
-    if(pos_neg=='Condomínios com saldo positivo'):
-        fig_saude = px.bar(saude[saude['SALDO']>0].sort_values('SALDO'),x='CONDOMINIO', y='SALDO',width=1000)
-        st.plotly_chart(fig_saude)
-    elif(pos_neg=='Condomínios com saldo negativo'):
-        fig_saude = px.bar(saude[saude['SALDO']<=0].sort_values('SALDO'),x='CONDOMINIO', y='SALDO',width=1000)
-        st.plotly_chart(fig_saude)
-with desocupados_tab:
-    desocupados['COND'] = desocupados['COND'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
-    desocupados['COND'] = desocupados['COND'].str.slice(3).astype(float)
-
-    print(desocupados.columns)
-    desocupados = desocupados[desocupados['SITUACAO']=='DESOCUPADO']
-    fig_des = px.bar(desocupados.sort_values('COND'),y='PNR',x='COND',orientation='h',height=1500)
-    fig_des.update_layout(bargap=0.1)
-
-    st.write('Total de apartamentos desocupados: ',len(desocupados))
-    st.plotly_chart(fig_des)
 #INICIO DAS FUNÇOES
 #########################################################################################
 def pre_fill_excel(template_file, supabase_client):
@@ -113,17 +89,25 @@ st.sidebar.header("Login")
 with st.sidebar:
     selected = option_menu(
         "Menu",
-        ["Login", "Empréstimo"],
-        icons=["key", "calculator"]
+        ["Login", "Empréstimo",'Dashboard','Upload'],
+        icons=["key", "calculator",'chart','']
     )
-username = st.sidebar.text_input("Usuário")
-password = st.sidebar.text_input("Senha", type="password")
-login_button = st.sidebar.button("Login")
+if 'authenticated' not in st.session_state:
+    st.session_state['authenticated'] = False
+login_button = 0
+if not st.session_state['authenticated']:
+    with st.form('Login'):
+        st.write('Insira suas credenciais')
+        username = st.text_input('Usuário')
+        password = st.text_input("Senha", type="password")
+        login_button = st.form_submit_button("Login")
+
 
 if login_button:
     if authenticate(username, password):
         st.sidebar.success(f"Bem-vindo {username}!")
         st.session_state['authenticated'] = True
+        auth = 1
         st.session_state['username'] = username
         st.session_state['role'] = users_db[username]['role']
     else:
@@ -136,19 +120,39 @@ if login_button:
 
 ####################################################################################
 if 'authenticated' in st.session_state and st.session_state['authenticated']:
+    
     st.write(f"Usuário logado: {st.session_state['username']} ({st.session_state['role']})")
 
 
     #CASO EDITOR:
     if st.session_state['role'] == 'editor':
 
-        with st.sidebar:
-            selected = option_menu(
-                    "Menu",
-                    ["Planilhas", 'Empréstimo', 'Alterar Senha', 'Criar Usuário'],
-                    icons=['info', 'calculator'],)
-        if selected=='Planilhas':
+        if selected=='Dashboard':
+            saude = pd.DataFrame(supabase.table('receitasxdespesas').select("*").execute().data)
+            desocupados = pd.DataFrame(supabase.table('desocupados').select("*").execute().data)
+            st.subheader('Dashboard')
+            saude_tab,desocupados_tab = st.tabs(['Saúde Financeira','Desocupados'])
+            with saude_tab:
+                st.write('Saldo médio: ',saude['SALDO'].mean())
+                pos_neg = st.selectbox(label='Selecione o gráfico desejado',options=['Condomínios com saldo positivo','Condomínios com saldo negativo'])
+                if(pos_neg=='Condomínios com saldo positivo'):
+                    fig_saude = px.bar(saude[saude['SALDO']>0].sort_values('SALDO'),x='CONDOMINIO', y='SALDO',width=1000)
+                    st.plotly_chart(fig_saude)
+                elif(pos_neg=='Condomínios com saldo negativo'):
+                    fig_saude = px.bar(saude[saude['SALDO']<=0].sort_values('SALDO'),x='CONDOMINIO', y='SALDO',width=1000)
+                    st.plotly_chart(fig_saude)
+            with desocupados_tab:
+                desocupados['COND'] = desocupados['COND'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
+                desocupados['COND'] = desocupados['COND'].str.slice(3).astype(float)
 
+                print(desocupados.columns)
+                desocupados = desocupados[desocupados['SITUACAO']=='DESOCUPADO']
+                fig_des = px.bar(desocupados.sort_values('COND'),y='PNR',x='COND',orientation='h',height=1500)
+                fig_des.update_layout(bargap=0.1)
+
+                st.write('Total de apartamentos desocupados: ',len(desocupados))
+                st.plotly_chart(fig_des)
+        if selected=='Upload':
             restituicoes_file = st.file_uploader("Insira o CSV da planilha restituições", type="csv")
             desocupados_file = st.file_uploader("Insira o CSV da planilha desocupados", type="csv")
             isolados_file = st.file_uploader("Insira o CSV da planilha isolados", type="csv")
