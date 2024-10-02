@@ -144,13 +144,36 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
             with desocupados_tab:
                 desocupados['COND'] = desocupados['COND'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
                 desocupados['COND'] = desocupados['COND'].str.slice(3).astype(float)
+                st.write('Total de apartamentos desocupados: ',len(desocupados))
+                st.write('Soma de valores condominiais: ',sum(desocupados['COND']), ' reais')
+                st.write('Média de valores condominiais: ', desocupados['COND'].mean().round(2), ' reais')
+                condo_selecionado = st.selectbox(label='Selecione o gráfico desejado',options=['Águas Claras',
+                'VNAVI','SHCES','SHCGN','SQS','SHIGS','Guara'])
 
                 print(desocupados.columns)
                 desocupados = desocupados[desocupados['SITUACAO']=='DESOCUPADO']
-                fig_des = px.bar(desocupados.sort_values('COND'),y='PNR',x='COND',orientation='h',height=1500)
-                fig_des.update_layout(bargap=0.1)
+                if condo_selecionado=='VNAVI':
+                    fig_des = px.bar(desocupados[desocupados['PNR'].str.startswith('VNAVI')].sort_values('COND'),y='PNR',x='COND',orientation='h',height=1000)
+                    fig_des.update_layout(bargap=0.1)
+                if condo_selecionado=='Águas Claras':
+                    fig_des = px.bar(desocupados[desocupados['PNR'].str.startswith('Águas Claras')].sort_values('COND'),y='PNR',x='COND',orientation='h')
+                    fig_des.update_layout(bargap=0.1)
+                if condo_selecionado=='SHCES':
+                    fig_des = px.bar(desocupados[desocupados['PNR'].str.startswith('SHCES')].sort_values('COND'),y='PNR',x='COND',orientation='h')
+                    fig_des.update_layout(bargap=0.1)
+                if condo_selecionado=='SHCGN':
+                    fig_des = px.bar(desocupados[desocupados['PNR'].str.startswith('SHCGN')].sort_values('COND'),y='PNR',x='COND',orientation='h')
+                    fig_des.update_layout(bargap=0.1)
+                if condo_selecionado=='SHIGS':
+                    fig_des = px.bar(desocupados[desocupados['PNR'].str.startswith('SHIGS')].sort_values('COND'),y='PNR',x='COND',orientation='h')
+                    fig_des.update_layout(bargap=0.1)
+                if condo_selecionado=='SQS':
+                    fig_des = px.bar(desocupados[desocupados['PNR'].str.startswith('SQS')].sort_values('COND'),y='PNR',x='COND',orientation='h')
+                    fig_des.update_layout(bargap=0.1)
+                if condo_selecionado=='Guara':
+                    fig_des = px.bar(desocupados[desocupados['PNR'].str.startswith('Guara')].sort_values('COND'),y='PNR',x='COND',orientation='h')
+                    fig_des.update_layout(bargap=0.1)
 
-                st.write('Total de apartamentos desocupados: ',len(desocupados))
                 st.plotly_chart(fig_des)
         if selected=='Upload':
             restituicoes_file = st.file_uploader("Insira o CSV da planilha restituições", type="csv")
