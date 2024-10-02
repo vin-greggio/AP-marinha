@@ -3,10 +3,11 @@ import hashlib
 import json
 import os
 import pandas as pd
-from PyPDF2 import PdfFileReader
+import polars as pl
 import matplotlib.pyplot as plt
 import matplotlib
 import plotly_express as px
+import openpyxl as ox
 from streamlit_option_menu import option_menu
 from supabase import create_client, Client
 from datetime import datetime
@@ -22,9 +23,49 @@ def init_connection():
     return create_client(url, key)
 
 supabase = init_connection()
+
+saude = pd.DataFrame(supabase.table('receitasxdespesas').select("*").execute().data)
+desocupados = pd.DataFrame(supabase.table('desocupados').select("*").execute().data)
+st.subheader('Dashboard')
+saude_tab,desocupados_tab = st.tabs(['Saúde Financeira','Desocupados'])
+with saude_tab:
+    st.write('Saldo médio: ',saude['SALDO'].mean())
+    pos_neg = st.selectbox(label='Selecione o gráfico desejado',options=['Condomínios com saldo positivo','Condomínios com saldo negativo'])
+    if(pos_neg=='Condomínios com saldo positivo'):
+        fig_saude = px.bar(saude[saude['SALDO']>0].sort_values('SALDO'),x='CONDOMINIO', y='SALDO',width=1000)
+        st.plotly_chart(fig_saude)
+    elif(pos_neg=='Condomínios com saldo negativo'):
+        fig_saude = px.bar(saude[saude['SALDO']<=0].sort_values('SALDO'),x='CONDOMINIO', y='SALDO',width=1000)
+        st.plotly_chart(fig_saude)
+with desocupados_tab:
+    desocupados['COND'] = desocupados['COND'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False)
+    desocupados['COND'] = desocupados['COND'].str.slice(3).astype(float)
+
+    print(desocupados.columns)
+    desocupados = desocupados[desocupados['SITUACAO']=='DESOCUPADO']
+    fig_des = px.bar(desocupados.sort_values('COND'),y='PNR',x='COND',orientation='h',height=1500)
+    fig_des.update_layout(bargap=0.1)
+
+    st.write('Total de apartamentos desocupados: ',len(desocupados))
+    st.plotly_chart(fig_des)
 #INICIO DAS FUNÇOES
 #########################################################################################
+def pre_fill_excel(template_file, supabase_client):
+    # Obter dados do Supabase
+    response = supabase_client.table('NOME_DA_TABELA').select('*').execute()
+    data = response.data
+    
+    # Carregar o template do Excel
+    wb = ox.load_workbook(template_file)
+    ws = wb.active
+    
+    # Preencher planilha com dados (exemplo: preencher com o primeiro registro)
+    for row in data:
+        ws['A1'] = row['coluna1']
+        ws['B2'] = row['coluna2']
+        break  # Exemplo simples, ajuste conforme necessário
 
+    # Salvar o arquivo pré-preenchido em memória
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -67,7 +108,7 @@ def has_permission(username, role):
 ####################################################################################
 
 st.title("Sistema de Planilhas AP Marinha")
-st.sidebar.image('C:\\Users\\Henry\\Documents\\GitHub\\AP-marinha\\imgmar.jpeg')
+st.sidebar.image('imgmar.jpeg')
 st.sidebar.header("Login")
 with st.sidebar:
     selected = option_menu(
