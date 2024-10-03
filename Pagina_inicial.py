@@ -504,12 +504,12 @@ if selected == "Empréstimo":
 
         # Formulário para atualizar o valor de uma parcela
         if 'show_update_form' in st.session_state and st.session_state.show_update_form:
-            st.write("Atualizar Valor de uma Parcela")
+            st.write("Atualizar Status da Parcela")
             
             # Escolher um empréstimo para atualizar
             emprestimo_selecionado_atualizacao = st.selectbox("Selecione um empréstimo para atualizar", 
-                                                            options=[e['nome'] for e in emprestimos], 
-                                                            key="selectbox_atualizar_emprestimo")
+                                                                options=[e['nome'] for e in emprestimos], 
+                                                                key="selectbox_atualizar_emprestimo")
 
             existing_emprestimo = next((e for e in emprestimos if e['nome'] == emprestimo_selecionado_atualizacao), None)
 
@@ -525,22 +525,31 @@ if selected == "Empréstimo":
                     parcelas = [p for p in parcelas if p['status'] == "Pago"]
                 elif status_selecionado == "Não Pagas":
                     parcelas = [p for p in parcelas if p['status'] == "Não Pago"]
+                else:  # Para "Todos", mantém todas as parcelas
+                    pass
 
                 if parcelas:
-                    parcela_selecionada = st.selectbox("Selecione uma parcela:", options=[f"Parcela {p['numero_parcela']}" for p in parcelas], key="selectbox_parcelas")
+                    # Selecionar uma parcela
+                    parcela_selecionada = st.selectbox("Selecione uma parcela:", 
+                                                        options=[f"Parcela {p['numero_parcela']}" for p in parcelas], 
+                                                        key="selectbox_parcelas")
                     parcela = next((p for p in parcelas if f"Parcela {p['numero_parcela']}" == parcela_selecionada), None)
 
                     if parcela:
                         st.write(f"Você selecionou a parcela {parcela['numero_parcela']}.")
 
-                        # Exibir o valor da parcela sendo editado
-                        novo_valor_parcela = st.number_input(f"Novo Valor da Parcela {parcela['numero_parcela']}", value=parcela.get('valor_parcela', 0.0), min_value=0.0, step=0.01)
-
-                        if st.button("Atualizar Valor da Parcela"):
-                            update_parcela(parcela['id'], novo_valor_parcela)
-                            st.success(f"Valor da parcela {parcela['numero_parcela']} atualizado com sucesso!")
+                        # Mostrar botão apenas se a parcela for "Não Pago"
+                        if parcela['status'] == "Não Pago":
+                            if st.button("Marcar como Pago"):
+                                if marcar_parcela_como_pago(parcela['id']):
+                                    st.success(f"Parcela {parcela['numero_parcela']} marcada como paga com sucesso!")
+                                else:
+                                    st.error("Erro ao marcar a parcela como paga.")
+                        else:
+                            st.warning("Essa parcela já está paga e não pode ser marcada novamente.")
                 else:
                     st.warning("Nenhuma parcela encontrada com o status selecionado.")
+
 
 
     # Página do Dashboard de Empréstimos
