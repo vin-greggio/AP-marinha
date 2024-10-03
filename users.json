@@ -1,1 +1,22 @@
-{"admin": {"password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918", "role": "editor"}, "viewer": {"password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8", "role": "viewer"}, "vinicius": {"password": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5", "role": "editor"}, "miguel": {"password": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5", "role": "viewer"}}
+{
+    "admin": {
+        "password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+        "role": "editor"
+    },
+    "viewer": {
+        "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+        "role": "viewer"
+    },
+    "vinicius": {
+        "password": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
+        "role": "editor"
+    },
+    "miguel": {
+        "password": "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
+        "role": "viewer"
+    },
+    "vanda_teste": {
+        "password": "4bf60670c6575ec3ae9dec9c6f847c947c975a1b9e0d47fd6553482673db21e3",
+        "role": "editor"
+    }
+}
