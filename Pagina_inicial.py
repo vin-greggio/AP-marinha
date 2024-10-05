@@ -368,6 +368,23 @@ if selected == "Empréstimo":
             st.error(f"Erro ao deletar empréstimo: {e}")
             return False
 
+    def marcar_parcela_como_nao_pago(parcela_id):
+        try:
+            response = supabase.table('parcelas').update({"status": "Não Pago"}).eq("id", parcela_id).execute()
+            return response.data is not None
+        except Exception as e:
+            st.error(f"Erro ao marcar a parcela como não paga: {e}")
+            return False
+
+    # Função para alterar o valor de uma parcela
+    def alterar_valor_parcela(parcela_id, novo_valor):
+        try:
+            response = supabase.table('parcelas').update({"valor_parcela": novo_valor}).eq("id", parcela_id).execute()
+            return response.data is not None
+        except Exception as e:
+            st.error(f"Erro ao alterar o valor da parcela: {e}")
+            return False
+
     # Página de Gerenciamento de Empréstimos
     page = st.radio("Selecione a página", ("Gerenciamento de Empréstimos", "Dashboard de Empréstimos"))
 
@@ -397,8 +414,8 @@ if selected == "Empréstimo":
         with st.expander("Deletar Empréstimo", expanded=False):
             if emprestimos:
                 emprestimo_selecionado = st.selectbox("Selecione um empréstimo para deletar", 
-                                                        options=[e['nome'] for e in emprestimos], 
-                                                        key=f"selectbox_deletar_emprestimos_{len(emprestimos)}")  # Chave única
+                                                    options=[e['nome'] for e in emprestimos], 
+                                                    key=f"selectbox_deletar_emprestimos_{len(emprestimos)}")  # Chave única
 
                 if st.button("Confirmar Deletar"):
                     existing_emprestimo = next((e for e in emprestimos if e['nome'] == emprestimo_selecionado), None)
@@ -502,10 +519,10 @@ if selected == "Empréstimo":
                         else:
                             st.error("Erro ao salvar o novo empréstimo.")
 
-        # Formulário para atualizar o valor de uma parcela
+        # Formulário para atualizar o valor de uma parcela e marcar como paga ou não paga
         if 'show_update_form' in st.session_state and st.session_state.show_update_form:
-            st.write("Atualizar Status da Parcela")
-            
+            st.write("Atualizar Status ou Valor da Parcela")
+
             # Escolher um empréstimo para atualizar
             emprestimo_selecionado_atualizacao = st.selectbox("Selecione um empréstimo para atualizar", 
                                                                 options=[e['nome'] for e in emprestimos], 
@@ -536,19 +553,36 @@ if selected == "Empréstimo":
                     parcela = next((p for p in parcelas if f"Parcela {p['numero_parcela']}" == parcela_selecionada), None)
 
                     if parcela:
-                        st.write(f"Você selecionou a parcela {parcela['numero_parcela']}.")
+                        st.write(f"Você selecionou a parcela {parcela['numero_parcela']}. Valor atual: R$ {parcela['valor_parcela']}")
 
-                        # Mostrar botão apenas se a parcela for "Não Pago"
-                        if parcela['status'] == "Não Pago":
-                            if st.button("Marcar como Pago"):
+                        # Opção para alterar o valor da parcela com o valor atual como valor padrão no input
+                        novo_valor_parcela = st.number_input(f"Alterar o valor da parcela {parcela['numero_parcela']}", 
+                                                            value=parcela['valor_parcela'],  # Valor atual da parcela
+                                                            step=0.01, key=f"valor_parcela_{parcela['numero_parcela']}")
+
+                        if st.button(f"Alterar valor da parcela {parcela['numero_parcela']}", key=f"botao_alterar_valor_parcela_{parcela['numero_parcela']}"):
+                            if alterar_valor_parcela(parcela['id'], novo_valor_parcela):
+                                st.success(f"Valor da parcela {parcela['numero_parcela']} alterado com sucesso!")
+                            else:
+                                st.error("Erro ao alterar o valor da parcela.")
+
+                        # Se o status for "Não Pagas", mostrar botão para marcar como Pago
+                        if status_selecionado == "Não Pagas":
+                            if st.button(f"Marcar parcela {parcela['numero_parcela']} como Paga", key=f"botao_marcar_pago_{parcela['numero_parcela']}"):
                                 if marcar_parcela_como_pago(parcela['id']):
-                                    st.success(f"Parcela {parcela['numero_parcela']} marcada como paga com sucesso!")
+                                    st.success(f"Parcela {parcela['numero_parcela']} marcada como Paga com sucesso!")
                                 else:
-                                    st.error("Erro ao marcar a parcela como paga.")
-                        else:
-                            st.warning("Essa parcela já está paga e não pode ser marcada novamente.")
+                                    st.error("Erro ao marcar a parcela como Paga.")
+
+                        # Se o status for "Pagas", mostrar botão para marcar como Não Pago
+                        elif status_selecionado == "Pagas":
+                            if st.button(f"Marcar parcela {parcela['numero_parcela']} como Não Pago", key=f"botao_marcar_nao_pago_{parcela['numero_parcela']}"):
+                                if marcar_parcela_como_nao_pago(parcela['id']):
+                                    st.success(f"Parcela {parcela['numero_parcela']} marcada como Não Pago com sucesso!")
+                                else:
+                                    st.error("Erro ao marcar a parcela como Não Pago.")
                 else:
-                    st.warning("Nenhuma parcela encontrada com o status selecionado.")
+                    st.warning(f"Nenhuma parcela encontrada com o status '{status_selecionado}'.")
 
 
 
@@ -564,7 +598,7 @@ if selected == "Empréstimo":
             total_emprestimos = len(emprestimos)
             total_valor = sum([e["valor"] for e in emprestimos])
 
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             col1.metric("Total de Empréstimos", total_emprestimos)
             col2.metric("Valor Total de Empréstimos", f"R${total_valor:,.2f}")
 
@@ -597,6 +631,10 @@ if selected == "Empréstimo":
                             if datetime.strptime(parcela["mes_vencimento"], '%Y-%m-%d') < datetime.now():
                                 total_valor_vencido += parcela["valor_parcela"]
 
+                # Exibindo as novas métricas de valores pagos e pendentes no topo
+                col1.metric("Valor Total Pago", f"R${total_valor_pago:,.2f}")
+                col3.metric("Valor Total Pendente", f"R${total_valor_pendente:,.2f}")
+
                 # Exibindo os valores em texto
                 st.subheader("Resumo Geral dos Empréstimos")
                 st.write(f"**Total de Empréstimos:** {len(emprestimos)}")
@@ -605,6 +643,28 @@ if selected == "Empréstimo":
                 st.write(f"**Valor Total Pago:** R${total_valor_pago:,.2f}")
                 st.write(f"**Valor Total Pendente:** R${total_valor_pendente:,.2f}")
                 st.write(f"**Valor Total Vencido:** R${total_valor_vencido:,.2f}")
+
+                # Gráfico 1: Distribuição de Parcelas (Pagas x Pendentes)
+                st.subheader("Distribuição de Parcelas")
+                fig_parcelas = px.bar(
+                    x=["Parcelas Pagas", "Parcelas Pendentes"],
+                    y=[total_parcelas_pagas, total_parcelas_pendentes],
+                    labels={"x": "Status", "y": "Quantidade de Parcelas"},
+                    title="Distribuição de Parcelas Pagas e Pendentes",
+                    text=[total_parcelas_pagas, total_parcelas_pendentes]
+                )
+                st.plotly_chart(fig_parcelas, use_container_width=True)
+
+                # Gráfico 2: Distribuição de Valores (Pago x Pendente)
+                st.subheader("Distribuição de Valores")
+                fig_valores = px.bar(
+                    x=["Valor Pago", "Valor Pendente"],
+                    y=[total_valor_pago, total_valor_pendente],
+                    labels={"x": "Status", "y": "Valores (R$)"},
+                    title="Distribuição de Valores Pagos e Pendentes",
+                    text=[f"R${total_valor_pago:,.2f}", f"R${total_valor_pendente:,.2f}"]
+                )
+                st.plotly_chart(fig_valores, use_container_width=True)
 
             else:
                 # Detalhes de um empréstimo específico
