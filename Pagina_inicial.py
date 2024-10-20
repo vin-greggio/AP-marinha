@@ -591,8 +591,6 @@ if selected == "Empréstimo":
                 else:
                     st.warning(f"Nenhuma parcela encontrada com o status '{status_selecionado}'.")
 
-
-
     # Página do Dashboard de Empréstimos
     if page == "Dashboard de Empréstimos":
         st.subheader("Dashboard de Empréstimos")
@@ -619,26 +617,39 @@ if selected == "Empréstimo":
             if emprestimo_selecionado == "Geral":
                 st.subheader("Dados Gerais de Todos os Empréstimos")
 
-                # Cálculos dos totais gerais
+                # Variáveis para cálculos totais
                 total_parcelas_pagas = 0
                 total_parcelas_pendentes = 0
-                total_valor_pago = 0
-                total_valor_pendente = 0
-                total_valor_vencido = 0
+                total_parcelas_atrasadas = 0
+                total_valor_pago = 0.0
+                total_valor_pendente = 0.0
+                total_valor_vencido = 0.0
 
+                # Iterar sobre cada empréstimo para calcular os totais
                 for e in emprestimos:
                     parcelas = load_parcelas(e["id"])
                     for parcela in parcelas:
-                        if parcela["status"] == "Pago" and parcela.get("valor_parcela") is not None:
-                            total_parcelas_pagas += 1
-                            total_valor_pago += parcela["valor_parcela"]
-                        elif parcela["status"] == "Não Pago" and parcela.get("valor_parcela") is not None:
-                            total_parcelas_pendentes += 1
-                            total_valor_pendente += parcela["valor_parcela"]
-                            if datetime.strptime(parcela["mes_vencimento"], '%Y-%m-%d') < datetime.now():
-                                total_valor_vencido += parcela["valor_parcela"]
+                        valor_parcela = parcela.get("valor_parcela", 0.0)  # Define 0.0 como valor padrão
 
-                # Exibindo as novas métricas de valores pagos e pendentes no topo
+                        # Verifica se o valor_parcela não é None e é um número
+                        if valor_parcela is not None and isinstance(valor_parcela, (int, float)):
+                            # Parcelas pagas
+                            if parcela["status"] == "Pago":
+                                total_parcelas_pagas += 1
+                                total_valor_pago += valor_parcela
+
+                            # Parcelas não pagas
+                            elif parcela["status"] == "Não Pago":
+                                total_parcelas_pendentes += 1
+                                total_valor_pendente += valor_parcela
+
+                                # Verifica se está vencida
+                                mes_vencimento = pd.to_datetime(parcela["mes_vencimento"])
+                                if mes_vencimento < pd.Timestamp.now():
+                                    total_parcelas_atrasadas += 1
+                                    total_valor_vencido += valor_parcela
+
+                # Exibindo as métricas de valores pagos e pendentes no topo
                 col1.metric("Valor Total Pago", f"R${total_valor_pago:,.2f}")
                 col3.metric("Valor Total Pendente", f"R${total_valor_pendente:,.2f}")
 
@@ -647,29 +658,30 @@ if selected == "Empréstimo":
                 st.write(f"**Total de Empréstimos:** {len(emprestimos)}")
                 st.write(f"**Total de Parcelas Pagas:** {total_parcelas_pagas}")
                 st.write(f"**Total de Parcelas Pendentes:** {total_parcelas_pendentes}")
+                st.write(f"**Total de Parcelas Atrasadas:** {total_parcelas_atrasadas}")
                 st.write(f"**Valor Total Pago:** R${total_valor_pago:,.2f}")
                 st.write(f"**Valor Total Pendente:** R${total_valor_pendente:,.2f}")
                 st.write(f"**Valor Total Vencido:** R${total_valor_vencido:,.2f}")
 
-                # Gráfico 1: Distribuição de Parcelas (Pagas x Pendentes)
+                # Gráfico 1: Distribuição de Parcelas (Pagas x Pendentes x Atrasadas)
                 st.subheader("Distribuição de Parcelas")
                 fig_parcelas = px.bar(
-                    x=["Parcelas Pagas", "Parcelas Pendentes"],
-                    y=[total_parcelas_pagas, total_parcelas_pendentes],
+                    x=["Pagas", "Pendentes", "Atrasadas"],
+                    y=[total_parcelas_pagas, total_parcelas_pendentes, total_parcelas_atrasadas],
                     labels={"x": "Status", "y": "Quantidade de Parcelas"},
-                    title="Distribuição de Parcelas Pagas e Pendentes",
-                    text=[total_parcelas_pagas, total_parcelas_pendentes]
+                    title="Distribuição de Parcelas",
+                    text=[total_parcelas_pagas, total_parcelas_pendentes, total_parcelas_atrasadas]
                 )
                 st.plotly_chart(fig_parcelas, use_container_width=True)
 
-                # Gráfico 2: Distribuição de Valores (Pago x Pendente)
+                # Gráfico 2: Distribuição de Valores (Pago x Pendente x Vencido)
                 st.subheader("Distribuição de Valores")
                 fig_valores = px.bar(
-                    x=["Valor Pago", "Valor Pendente"],
-                    y=[total_valor_pago, total_valor_pendente],
+                    x=["Valor Pago", "Valor Pendente", "Valor Vencido"],
+                    y=[total_valor_pago, total_valor_pendente, total_valor_vencido],
                     labels={"x": "Status", "y": "Valores (R$)"},
-                    title="Distribuição de Valores Pagos e Pendentes",
-                    text=[f"R${total_valor_pago:,.2f}", f"R${total_valor_pendente:,.2f}"]
+                    title="Distribuição de Valores",
+                    text=[f"R${total_valor_pago:,.2f}", f"R${total_valor_pendente:,.2f}", f"R${total_valor_vencido:,.2f}"]
                 )
                 st.plotly_chart(fig_valores, use_container_width=True)
 
@@ -683,22 +695,19 @@ if selected == "Empréstimo":
                 df_parcelas["mes_vencimento"] = pd.to_datetime(df_parcelas["mes_vencimento"])
                 df_parcelas["status"] = df_parcelas["status"].apply(lambda x: "Pago" if x == "Pago" else "Não Pago")
 
-                # Cálculos dos totais
+                # Cálculos dos totais para o empréstimo específico
                 valor_total_emprestimo = emprestimo["valor"]
                 parcelas_pagas = df_parcelas[df_parcelas["status"] == "Pago"].shape[0]
                 parcelas_pendentes = df_parcelas[df_parcelas["status"] == "Não Pago"].shape[0]
-
-                # Definindo parcelas atrasadas
                 atrasadas = df_parcelas[(df_parcelas["status"] == "Não Pago") & (df_parcelas["mes_vencimento"] < pd.Timestamp.now())].shape[0]
-
-                valor_pago = parcelas_pagas * (df_parcelas["valor_parcela"].iloc[0] if not df_parcelas["valor_parcela"].isnull().all() else 0)  # Verifica se não é None
-                valor_pendente = parcelas_pendentes * (df_parcelas["valor_parcela"].iloc[0] if not df_parcelas["valor_parcela"].isnull().all() else 0)  # Verifica se não é None
-
+                valor_pago = df_parcelas[df_parcelas["status"] == "Pago"]["valor_parcela"].sum()
+                valor_pendente = df_parcelas[df_parcelas["status"] == "Não Pago"]["valor_parcela"].sum()
 
                 # Exibindo os valores em texto
                 st.write(f"Valor Total do Empréstimo: R${valor_total_emprestimo:,.2f}")
                 st.write(f"Total de Parcelas Pagas: {parcelas_pagas}")
                 st.write(f"Total de Parcelas Pendentes: {parcelas_pendentes}")
+                st.write(f"Total de Parcelas Atrasadas: {atrasadas}")
                 st.write(f"Valor Total Pago: R${valor_pago:,.2f}")
                 st.write(f"Valor Total Pendente: R${valor_pendente:,.2f}")
 
@@ -707,7 +716,7 @@ if selected == "Empréstimo":
                     x=["Pagas", "Pendentes", "Atrasadas"],
                     y=[parcelas_pagas, parcelas_pendentes, atrasadas],
                     labels={"x": "Status", "y": "Quantidade de Parcelas"},
-                    title="Distribuição de Parcelas Pagas, Pendentes e Atrasadas",
+                    title="Distribuição de Parcelas",
                     text=[parcelas_pagas, parcelas_pendentes, atrasadas]
                 )
                 st.plotly_chart(fig, use_container_width=True)
