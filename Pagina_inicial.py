@@ -184,6 +184,13 @@ if 'authenticated' in st.session_state and st.session_state['authenticated']:
             desocupados_file = st.file_uploader("Insira o CSV da planilha desocupados", type="csv")
             isolados_file = st.file_uploader("Insira o CSV da planilha isolados", type="csv")
             taxaextra_file = st.file_uploader("Insira o CSV da planilha taxa extra", type="csv")
+            extrato_file = st.file_uploader("Insira o Excel da planilha de extrato", type = "xlsx")
+
+            if extrato_file is not None:
+                extrato_df = pd.read_excel(extrato_file, header=2)
+                extrato_df['Valor R$ '] = pd.to_numeric(extrato_df['Valor R$ '])
+                st.data_editor(extrato_df)
+                st.data_editor(extrato_df.groupby('Historico').sum('Valor R$'))
 
             if restituicoes_file is not None:
                 restituicoes_df = pd.read_csv(restituicoes_file)
